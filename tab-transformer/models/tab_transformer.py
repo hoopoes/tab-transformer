@@ -6,20 +6,7 @@ from torch import nn, einsum
 
 from einops import rearrange
 
-
-class Residual(nn.Module):
-    def __init__(self, fn):
-        super().__init__()
-        self.fn = fn
-
-    def forward(self, x, **kwargs):
-        return self.fn(x, **kwargs) + x
-
-
-class GEGLU(nn.Module):
-    def forward(self, x):
-        x, gates = x.chunk(2, dim=-1)
-        return x * F.gelu(gates)
+from components import Residual, GEGLU
 
 
 class FeedForward(nn.Module):
@@ -39,10 +26,10 @@ class FeedForward(nn.Module):
 class Attention(nn.Module):
     def __init__(
         self,
-        hidden_size,
-        num_heads=8,
-        dim_head=16,
-        drop_rate=0.
+        hidden_size: int = 32,
+        num_heads: int = 8,
+        dim_head: int = 16,
+        drop_rate: float = 0.0
     ):
         super().__init__()
         inner_dim = dim_head * num_heads
@@ -73,7 +60,7 @@ class Attention(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        num_tokens: int,
+        num_embeddings: int,
         hidden_size: int,
         num_layers: int,
         num_heads: int,
@@ -83,7 +70,7 @@ class Transformer(nn.Module):
         ff_drop_rate: float
     ):
         super().__init__()
-        self.embeds = nn.Embedding(num_tokens, hidden_size)
+        self.embeds = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=hidden_size)
         self.layers = nn.ModuleList([])
 
         for _ in range(num_layers):
@@ -166,7 +153,7 @@ class TabTransformer(nn.Module):
 
         # create category embeddings table
         self.num_special_tokens = num_special_tokens
-        total_tokens = self.num_unique_categories + num_special_tokens
+        num_embeddings = self.num_unique_categories + num_special_tokens
 
         # for automatically offsetting unique category ids
         # to the correct position in the categories embedding table
@@ -189,7 +176,7 @@ class TabTransformer(nn.Module):
         self.num_cont_features = num_cont_features
 
         self.transformer = Transformer(
-            num_tokens=total_tokens,
+            num_embeddings=num_embeddings,
             hidden_size=hidden_size,
             num_layers=num_layers,
             num_heads=num_heads,
