@@ -7,11 +7,3 @@ def get_device():
 
 def get_num_params(model):
     return sum([p.numel() for p in model.parameters()])
-
-
-def exists(val):
-    return val is not None
-
-
-def default(val, d):
-    return val if exists(val) else d

@@ -2,11 +2,15 @@
 <h1 align="center">TabTransformer</h1>
 <h5 align="center">Transformer for tabular data</h5>
 
-pytorch implementation of TabTransformer. Several experiments will be applied to test the algorithm.  
+This is an **unoffical** pytorch implementation of TabTransformer made for personal study.  
+Several experiments will be applied to test the algorithm.    
 
-## Contents
-
+## Contents  
 - [Introduction](#introduction)
+- [References](#references)
 
-## Introduction
+## Introduction  
 
+
+## References  
+- https://github.com/lucidrains/tab-transformer-pytorch  
