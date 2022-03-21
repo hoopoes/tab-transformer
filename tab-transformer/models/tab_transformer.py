@@ -16,16 +16,6 @@ class Residual(nn.Module):
         return self.fn(x, **kwargs) + x
 
 
-class PreNorm(nn.Module):
-    def __init__(self, dim, fn):
-        super().__init__()
-        self.norm = nn.LayerNorm(normalized_shape=dim)
-        self.fn = fn
-
-    def forward(self, x, **kwargs):
-        return self.fn(self.norm(x), **kwargs)
-
-
 class GEGLU(nn.Module):
     def forward(self, x):
         x, gates = x.chunk(2, dim=-1)
@@ -33,13 +23,13 @@ class GEGLU(nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, mult=4, dropout=0.0):
+    def __init__(self, hidden_size: int = 32, multiplier: int = 4, drop_rate: float = 0.0):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(dim, dim * mult * 2),
+            nn.Linear(in_features=hidden_size, out_features=hidden_size * multiplier * 2),
             GEGLU(),
-            nn.Dropout(dropout),
-            nn.Linear(dim * mult, dim)
+            nn.Dropout(p=drop_rate),
+            nn.Linear(in_features=hidden_size * multiplier, out_features=hidden_size)
         )
 
     def forward(self, x, **kwargs):
@@ -89,6 +79,7 @@ class Transformer(nn.Module):
         num_heads: int,
         dim_head: int,
         attn_drop_rate: float,
+        ff_multiplier: int,
         ff_drop_rate: float
     ):
         super().__init__()
@@ -98,23 +89,15 @@ class Transformer(nn.Module):
         for _ in range(num_layers):
             self.layers.append(nn.ModuleList([
                 Residual(
-                    PreNorm(
-                        hidden_size,
-                        Attention(
-                            hidden_size=hidden_size,
-                            num_heads=num_heads,
-                            dim_head=dim_head,
-                            drop_rate=attn_drop_rate
-                        )
+                    nn.Sequential(
+                        nn.LayerNorm(normalized_shape=hidden_size),
+                        Attention(hidden_size, num_heads, dim_head, attn_drop_rate)
                     )
                 ),
                 Residual(
-                    PreNorm(
-                        hidden_size,
-                        FeedForward(
-                            hidden_size,
-                            dropout=ff_drop_rate
-                        )
+                    nn.Sequential(
+                        nn.LayerNorm(normalized_shape=hidden_size),
+                        FeedForward(hidden_size, ff_multiplier, ff_drop_rate)
                     )
                 ),
             ]))
@@ -158,19 +141,21 @@ class TabTransformer(nn.Module):
         num_special_tokens: int = 2,
         continuous_mean_std: Optional[torch.Tensor] = None,
         attn_drop_rate: float = 0.0,
+        ff_multiplier: int = 4,
         ff_drop_rate: float = 0.0
     ):
         """
         :param num_class_per_category: tuple containing the number of unique values within each category
         :param num_cont_features: number of continuous values
         :param hidden_size: hidden layer size
-        :param num_layers:
-        :param num_heads:
+        :param num_layers: # layers of transformer
+        :param num_heads: # heads of transformer
         :param dim_head:
         :param num_special_tokens:
         :param continuous_mean_std: optional, normalize the continuous values before layer norm
-        :param attn_drop_rate:
-        :param ff_drop_rate:
+        :param attn_drop_rate: drop out rate of attention net
+        :param ff_multiplier: feature multiplier of feed-forward net
+        :param ff_drop_rate: drop out rate of feed-forward net
         """
         super().__init__()
         assert all(map(lambda n: n > 0, num_class_per_category)), 'number of each category must be positive'
@@ -185,7 +170,8 @@ class TabTransformer(nn.Module):
 
         # for automatically offsetting unique category ids
         # to the correct position in the categories embedding table
-        categories_offset = F.pad(torch.tensor(list(num_class_per_category)), (1, 0), value=num_special_tokens)
+        categories_offset = F.pad(
+            torch.tensor(list(num_class_per_category)), (1, 0), value=num_special_tokens)
         categories_offset = categories_offset.cumsum(dim=-1)[:-1]
         self.register_buffer('categories_offset', categories_offset)
 
@@ -209,6 +195,7 @@ class TabTransformer(nn.Module):
             num_heads=num_heads,
             dim_head=dim_head,
             attn_drop_rate=attn_drop_rate,
+            ff_multiplier=ff_multiplier,
             ff_drop_rate=ff_drop_rate
         )
 

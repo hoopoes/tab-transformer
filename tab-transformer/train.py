@@ -1,3 +1,5 @@
+import wandb
+
 import torch
 from models.tab_transformer import TabTransformer
 
