@@ -14,3 +14,4 @@ Several experiments will be applied to test the algorithm.
 
 ## References  
 - https://github.com/lucidrains/tab-transformer-pytorch  
+- https://github.com/timeseriesAI/tsai/blob/main/tsai/models/TabTransformer.py  
