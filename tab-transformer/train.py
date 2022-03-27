@@ -15,7 +15,9 @@ model = TabTransformer(
     continuous_mean_std=torch.randn(10, 2)
 )
 
-x_cate = torch.randint(0, 5, (1, 5))
-x_cont = torch.randn(1, 10)
+batch_size = 32
+
+x_cate = torch.randint(0, 5, (batch_size, 5))
+x_cont = torch.randn(batch_size, 10)
 
 pred = model(x_cate, x_cont)

@@ -12,7 +12,7 @@ from torch import nn, einsum
 
 from einops import rearrange
 
-from components import Residual, GEGLU, SharedEmbedding
+from .components import Residual, GEGLU, SharedEmbedding
 
 
 class FeedForward(nn.Module):
@@ -111,7 +111,7 @@ class MLP(nn.Module):
             nn.Linear(in_features=84, out_features=42, bias=True),
             nn.ReLU(),
             nn.Linear(in_features=42, out_features=1, bias=True),
-            nn.ReLU()
+            nn.Sigmoid()
         )
 
     def forward(self, x):
