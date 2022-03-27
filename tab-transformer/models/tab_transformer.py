@@ -1,3 +1,9 @@
+"""
+Notes
+1) Missing values in categorical variables are not allowed.
+ They must be filled with a additional category value
+"""
+
 from typing import Tuple, Optional
 
 import torch
@@ -6,7 +12,7 @@ from torch import nn, einsum
 
 from einops import rearrange
 
-from components import Residual, GEGLU
+from components import Residual, GEGLU, SharedEmbedding
 
 
 class FeedForward(nn.Module):
@@ -60,7 +66,6 @@ class Attention(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        num_embeddings: int,
         hidden_size: int,
         num_layers: int,
         num_heads: int,
@@ -70,7 +75,6 @@ class Transformer(nn.Module):
         ff_drop_rate: float
     ):
         super().__init__()
-        self.embeds = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=hidden_size)
         self.layers = nn.ModuleList([])
 
         for _ in range(num_layers):
@@ -90,8 +94,6 @@ class Transformer(nn.Module):
             ]))
 
     def forward(self, x):
-        x = self.embeds(x)
-
         for attn, ff in self.layers:
             x = attn(x)
             x = ff(x)
@@ -125,7 +127,6 @@ class TabTransformer(nn.Module):
         num_layers: int = 6,
         num_heads: int = 8,
         dim_head: int = 16,
-        num_special_tokens: int = 2,
         continuous_mean_std: Optional[torch.Tensor] = None,
         attn_drop_rate: float = 0.0,
         ff_multiplier: int = 4,
@@ -137,8 +138,7 @@ class TabTransformer(nn.Module):
         :param hidden_size: hidden layer size
         :param num_layers: # layers of transformer
         :param num_heads: # heads of transformer
-        :param dim_head:
-        :param num_special_tokens:
+        :param dim_head: vector size of each head in attention layers
         :param continuous_mean_std: optional, normalize the continuous values before layer norm
         :param attn_drop_rate: drop out rate of attention net
         :param ff_multiplier: feature multiplier of feed-forward net
@@ -147,22 +147,21 @@ class TabTransformer(nn.Module):
         super().__init__()
         assert all(map(lambda n: n > 0, num_class_per_category)), 'number of each category must be positive'
 
-        # categorical variables
+        # 1) categorical variables
         self.num_categories = len(num_class_per_category)
-        self.num_unique_categories = sum(num_class_per_category)
+        self.num_category_classes = sum(num_class_per_category)
 
-        # create category embeddings table
-        self.num_special_tokens = num_special_tokens
-        num_embeddings = self.num_unique_categories + num_special_tokens
+        # Shared Embedding
+        self.embeds = nn.ModuleList()
 
-        # for automatically offsetting unique category ids
-        # to the correct position in the categories embedding table
-        categories_offset = F.pad(
-            torch.tensor(list(num_class_per_category)), (1, 0), value=num_special_tokens)
-        categories_offset = categories_offset.cumsum(dim=-1)[:-1]
-        self.register_buffer('categories_offset', categories_offset)
+        for num_class in num_class_per_category:
+            self.embeds.append(
+                SharedEmbedding(
+                    num_embeddings=num_class, embedding_dim=hidden_size,
+                    shared_embed=True, shared_method='add')
+            )
 
-        # continuous variables
+        # 2) continuous variables
         if continuous_mean_std is not None:
             message = f'''
             continuous_mean_std must have a shape of ({num_cont_features}, 2)
@@ -176,7 +175,6 @@ class TabTransformer(nn.Module):
         self.num_cont_features = num_cont_features
 
         self.transformer = Transformer(
-            num_embeddings=num_embeddings,
             hidden_size=hidden_size,
             num_layers=num_layers,
             num_heads=num_heads,
@@ -186,13 +184,15 @@ class TabTransformer(nn.Module):
             ff_drop_rate=ff_drop_rate
         )
 
-        # mlp
-        mlp_in_features = (hidden_size * self.num_categories) + num_cont_features
-        self.mlp = MLP(in_features=mlp_in_features)
+        # 3) final mlp
+        num_features_mlp = (hidden_size * self.num_categories) + num_cont_features
+        self.mlp = MLP(in_features=num_features_mlp)
 
     def forward(self, x_cate: torch.Tensor, x_cont: torch.Tensor) -> torch.Tensor:
         # 1. categorical features
-        x_cate += self.categories_offset
+        x_cate = [embed(x_cate[:, i]) for i, embed in enumerate(self.embeds)]
+        x_cate = torch.cat(x_cate, dim=1)
+
         x_cate = self.transformer(x_cate)
         x_cate = x_cate.flatten(1)
 
