@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 
 
-class BaseMachiine(ABC):
+class BaseMachine(ABC):
     @property
     @abstractmethod
-    def queries(self):
+    def info(self):
         pass
 
     @abstractmethod
-    def load_dataset(self):
+    def load_data(self):
         pass

@@ -3,15 +3,14 @@ import wandb
 
 from config import get_cfg_defaults
 
+import numpy as np
+import pandas as pd
+
 import torch
 
 from utils.logging import make_logger
 from models.tab_transformer import TabTransformer
 
-# os.path.realpath(__file__)
-# os.path.abspath(__file__)
-
-# url: https://automl.chalearn.org/data
 
 logger = make_logger(name='tab-transformer trainer')
 
@@ -21,8 +20,11 @@ cfg.freeze()
 
 logger.info(f'configuration: \n {cfg}')
 
-# with open(os.path.join(cfg.ADDRESS.DATA, 'albert/albert_train.data'), "r") as file:
+# args
+BATCH_SIZE = 32
 
+
+# train
 model = TabTransformer(
     num_class_per_category=(10, 5, 6, 5, 8),
     num_cont_features=10,
@@ -34,10 +36,8 @@ model = TabTransformer(
     continuous_mean_std=torch.randn(10, 2)
 )
 
-batch_size = 32
-
-x_cate = torch.randint(0, 5, (batch_size, 5))
-x_cont = torch.randn(batch_size, 10)
+x_cate = torch.randint(0, 5, (BATCH_SIZE , 5))
+x_cont = torch.randn(BATCH_SIZE , 10)
 
 pred = model(x_cate, x_cont)
 
