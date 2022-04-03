@@ -23,6 +23,12 @@ logger.info(f'configuration: \n {cfg}')
 # args
 BATCH_SIZE = 32
 
+# temp
+from core.bank import BankMachine
+
+machine = BankMachine(cfg, logger)
+data, additional_info = machine.preprocess()
+
 
 # train
 model = TabTransformer(
