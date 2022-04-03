@@ -24,10 +24,10 @@ logger.info(f'configuration: \n {cfg}')
 BATCH_SIZE = 32
 
 # temp
-from core.bank import BankMachine
+from core.bank import BankPreprocessor
 
-machine = BankMachine(cfg, logger)
-data, additional_info = machine.preprocess()
+machine = BankPreprocessor(cfg, logger)
+train_dataset, val_dataset, test_dataset, map_records = machine.get_dataset(train_ratio=0.7, val_ratio=0.2)
 
 
 # train
