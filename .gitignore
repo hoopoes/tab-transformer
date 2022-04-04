@@ -1,5 +1,7 @@
 # custom
 data/
+lightning_logs/
+wandb/
 .idea/
 
 # Byte-compiled / optimized / DLL files

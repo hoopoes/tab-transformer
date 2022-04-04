@@ -22,6 +22,7 @@ _C.MODEL.FF_DROP_RATE = 0.1
 
 # train
 _C.TRAIN = CN()
+_C.TRAIN.BATCH_SIZE = 64
 
 
 def get_cfg_defaults():

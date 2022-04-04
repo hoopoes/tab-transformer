@@ -37,7 +37,7 @@ class BankDataset(Dataset):
 
         x_cate = torch.tensor(x_cate, dtype=torch.int32)
         x_cont = torch.tensor(x_cont, dtype=torch.float32)
-        labels = torch.tensor(labels, dtype=torch.int32)
+        labels = torch.tensor(labels, dtype=torch.float32)
 
         sample = {
             'x_cate': x_cate,

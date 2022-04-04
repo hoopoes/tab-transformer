@@ -106,11 +106,11 @@ class MLP(nn.Module):
         super().__init__()
 
         self.mlp = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=84, bias=True),
+            nn.Linear(in_features=in_features, out_features=64, bias=True),
             nn.ReLU(),
-            nn.Linear(in_features=84, out_features=42, bias=True),
+            nn.Linear(in_features=64, out_features=32, bias=True),
             nn.ReLU(),
-            nn.Linear(in_features=42, out_features=1, bias=True),
+            nn.Linear(in_features=32, out_features=1, bias=True),
             nn.Sigmoid()
         )
 
