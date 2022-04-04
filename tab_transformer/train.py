@@ -27,7 +27,8 @@ BATCH_SIZE = 32
 from core.bank import BankPreprocessor
 
 machine = BankPreprocessor(cfg, logger)
-train_dataset, val_dataset, test_dataset, map_records = machine.get_dataset(train_ratio=0.7, val_ratio=0.2)
+train_loader, val_loader, test_loader, map_records = machine.get_loader(
+    train_ratio=0.7, val_ratio=0.2, batch_size=BATCH_SIZE)
 
 
 # train

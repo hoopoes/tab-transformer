@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 from core.base import BaseMachine
 
@@ -93,6 +93,9 @@ class BankPreprocessor(BaseMachine):
         self.logger.info('mapped categorical features to integer index')
 
         # 2. scale continuous features
+        # caution: originally, scale should be performed
+        # after data split so that data leakage does not occur
+        # formula: (x - median) / (Q3 - Q1)
         scaler = RobustScaler()
         scaled = scaler.fit_transform(data[cont_features])
 
@@ -113,7 +116,7 @@ class BankPreprocessor(BaseMachine):
 
         return data, additional_info
 
-    def get_dataset(self, train_ratio: float = 0.7, val_ratio: float = 0.2):
+    def get_loader(self, train_ratio: float = 0.7, val_ratio: float = 0.2, batch_size: int = 32):
         self.logger.info('get dataset')
 
         data, additional_info = self.preprocess()
@@ -143,4 +146,8 @@ class BankPreprocessor(BaseMachine):
         val_dataset = BankDataset(dataset['val'], additional_info[1], additional_info[2])
         test_dataset = BankDataset(dataset['test'], additional_info[1], additional_info[2])
 
-        return train_dataset, val_dataset, test_dataset, additional_info[0]
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+
+        return train_loader, val_loader, test_loader, additional_info[0]
