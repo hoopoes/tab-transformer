@@ -1,7 +1,7 @@
 """
 Notes
 1) Missing values in categorical variables are not allowed.
- They must be filled with a additional category value
+ They must be filled with an additional category values
 """
 
 from typing import Tuple, Optional

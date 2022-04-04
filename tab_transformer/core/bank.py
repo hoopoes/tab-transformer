@@ -31,13 +31,17 @@ class BankDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        categorical_features = self.file[self.cate_features].iloc[idx, :]
-        continuous_features = self.file[self.cont_features].iloc[idx, :]
-        labels = self.file[['y']].iloc[idx, :]
+        x_cate = self.file[self.cate_features].iloc[idx, :].values
+        x_cont = self.file[self.cont_features].iloc[idx, :].values
+        labels = self.file[['y']].iloc[idx, :].values
+
+        x_cate = torch.tensor(x_cate, dtype=torch.int32)
+        x_cont = torch.tensor(x_cont, dtype=torch.float32)
+        labels = torch.tensor(labels, dtype=torch.int32)
 
         sample = {
-            'cate_features': categorical_features,
-            'cont_features': continuous_features,
+            'x_cate': x_cate,
+            'x_cont': x_cont,
             'labels': labels
         }
 
@@ -80,7 +84,7 @@ class BankPreprocessor(BaseMachine):
         # 1. categorical features mapping
         for f in cate_features:
             if f == 'month':
-                month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'oct', 'nov', 'dec']
+                month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
                 map_dict = {m: i for i, m in enumerate(month_list)}
                 data[f] = data[f].map(map_dict)
             else:
@@ -112,7 +116,9 @@ class BankPreprocessor(BaseMachine):
 
         data = data[cate_features + cont_features + ['y']]
 
-        additional_info = [map_records, cate_features, cont_features]
+        num_class_per_category = tuple(len(map_records[feature]) for feature in cate_features)
+
+        additional_info = [map_records, num_class_per_category, cate_features, cont_features]
 
         return data, additional_info
 
@@ -137,17 +143,17 @@ class BankPreprocessor(BaseMachine):
         self.logger.info(
             f"""
             preprocessing done
-            - cate feature: {additional_info[1]}
-            - cont feature: {additional_info[2]}'
+            - cate feature: {additional_info[2]}
+            - cont feature: {additional_info[3]}'
             """
         )
 
-        train_dataset = BankDataset(dataset['train'], additional_info[1], additional_info[2])
-        val_dataset = BankDataset(dataset['val'], additional_info[1], additional_info[2])
-        test_dataset = BankDataset(dataset['test'], additional_info[1], additional_info[2])
+        train_dataset = BankDataset(dataset['train'], additional_info[2], additional_info[3])
+        val_dataset = BankDataset(dataset['val'], additional_info[2], additional_info[3])
+        test_dataset = BankDataset(dataset['test'], additional_info[2], additional_info[3])
 
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
-        return train_loader, val_loader, test_loader, additional_info[0]
+        return train_loader, val_loader, test_loader, additional_info[0], additional_info[1]

@@ -1,15 +1,19 @@
 import os
-import wandb
-
 from config import get_cfg_defaults
 
 import numpy as np
 import pandas as pd
+import wandb
 
 import torch
+import torch.nn.functional as F
+
+import pytorch_lightning as pl
+
+from models.tab_transformer import TabTransformer
 
 from utils.logging import make_logger
-from models.tab_transformer import TabTransformer
+from utils.utils import get_device
 
 
 logger = make_logger(name='tab-transformer trainer')
@@ -27,24 +31,21 @@ BATCH_SIZE = 32
 from core.bank import BankPreprocessor
 
 machine = BankPreprocessor(cfg, logger)
-train_loader, val_loader, test_loader, map_records = machine.get_loader(
+train_loader, val_loader, test_loader, map_records, num_class_per_category = machine.get_loader(
     train_ratio=0.7, val_ratio=0.2, batch_size=BATCH_SIZE)
 
-
-# train
 model = TabTransformer(
-    num_class_per_category=(10, 5, 6, 5, 8),
-    num_cont_features=10,
-    hidden_size=32,
-    num_layers=6,
-    num_heads=8,
-    attn_drop_rate=0.1,
-    ff_drop_rate=0.1,
-    continuous_mean_std=torch.randn(10, 2)
+    num_class_per_category=num_class_per_category,
+    num_cont_features=cfg.DATA.NUM_CONT_FEATURES,
+    hidden_size=cfg.MODEL.HIDDEN_SIZE,
+    num_layers=cfg.MODEL.NUM_LAYERS,
+    num_heads=cfg.MODEL.NUM_HEADS,
+    attn_drop_rate=cfg.MODEL.ATTN_DROP_RATE,
+    ff_drop_rate=cfg.MODEL.FF_DROP_RATE,
+    continuous_mean_std=torch.randn(cfg.DATA.NUM_CONT_FEATURES, 2)
 )
 
-x_cate = torch.randint(0, 5, (BATCH_SIZE , 5))
-x_cont = torch.randn(BATCH_SIZE , 10)
 
-pred = model(x_cate, x_cont)
+# batch = next(iter(train_loader))
+# preds = model(batch['x_cate'], batch['x_cont'])
 
