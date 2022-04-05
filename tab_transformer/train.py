@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from config import get_cfg_defaults
 
@@ -20,7 +21,7 @@ from utils.logging import make_logger
 logger = make_logger(name='tab-transformer trainer')
 
 cfg = get_cfg_defaults()
-cfg.merge_from_file(os.path.join(os.getcwd(), 'tab_transformer/configs/base_tab.yaml'))
+cfg.merge_from_file(os.path.join(os.getcwd(), 'tab_transformer/configs/v1.yaml'))
 cfg.freeze()
 
 logger.info(f'configuration: \n {cfg}')
@@ -32,13 +33,30 @@ train_loader, val_loader, test_loader, map_records, num_class_per_category = mac
 
 
 learner = BankLearner(cfg=cfg, num_class_per_category=num_class_per_category)
+
 wandb_logger = WandbLogger(
     project='tab-transformer-experiment',
-    name='bank: tt, v1',
+    name=cfg.TRAIN.RUN_NAME,
 )
 
+callbacks = [
+    ModelCheckpoint(
+        dirpath=cfg.ADDRESS.CHECK,
+        filename='tt-{epoch}-{val_auc:.2f}',
+        mode='max',
+        every_n_val_epochs=1),
+    EarlyStopping(
+        monitor='val_acc',
+        patience=cfg.TRAIN.PATIENCE,
+        mode='max')
+]
 
-trainer = pl.Trainer(max_epochs=2, logger=wandb_logger, gpus=1)
+trainer = pl.Trainer(
+    max_epochs=cfg.TRAIN.EPOCHS,
+    gpus=1,
+    logger=wandb_logger,
+    callbacks=callbacks
+)
 
 trainer.fit(learner, train_loader, val_loader)
 
@@ -46,3 +64,5 @@ trainer.fit(learner, train_loader, val_loader)
 # check
 inputs = next(iter(test_loader))
 preds = learner(inputs)
+
+print(torch.where(preds >= 0.5)[0].shape, torch.where(preds < 0.5)[0].shape)

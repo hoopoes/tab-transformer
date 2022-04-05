@@ -1,5 +1,0 @@
-MODEL:
-  NAME: bank_tab
-
-TRAIN:
-  BATCH_SIZE: 128
