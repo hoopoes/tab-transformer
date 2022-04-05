@@ -33,7 +33,7 @@ train_loader, val_loader, test_loader, map_records, num_class_per_category = mac
 
 learner = BankLearner(cfg=cfg, num_class_per_category=num_class_per_category)
 wandb_logger = WandbLogger(
-    project='tab-transformer',
+    project='wandb_tt',
     name='bank: tab transformer',
 )
 

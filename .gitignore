@@ -1,6 +1,7 @@
 # custom
 data/
 lightning_logs/
+wandb_tt
 wandb/
 .idea/
 
