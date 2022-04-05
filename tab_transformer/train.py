@@ -33,12 +33,12 @@ train_loader, val_loader, test_loader, map_records, num_class_per_category = mac
 
 learner = BankLearner(cfg=cfg, num_class_per_category=num_class_per_category)
 wandb_logger = WandbLogger(
-    project='wandb_tt',
-    name='bank: tab transformer',
+    project='tab-transformer-experiment',
+    name='bank: tt, v1',
 )
 
 
-trainer = pl.Trainer(max_epochs=10, logger=wandb_logger, gpus=1)
+trainer = pl.Trainer(max_epochs=2, logger=wandb_logger, gpus=1)
 
 trainer.fit(learner, train_loader, val_loader)
 

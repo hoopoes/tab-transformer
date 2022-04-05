@@ -1,4 +1,4 @@
-from torchmetrics import MetricCollection, Accuracy, Precision, Recall
+from torchmetrics import MetricCollection, Accuracy, Precision, Recall, AUC
 
 
 def get_metric_collection() -> MetricCollection:

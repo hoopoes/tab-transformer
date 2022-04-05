@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Tuple, Dict
 from yacs.config import CfgNode
 
 import torch
+from torchmetrics.functional import accuracy, precision, recall, auroc
 import pytorch_lightning as pl
 
 from models.tab_transformer import TabTransformer
-from utils.metrics import get_metric_collection
 
 
 class BankLearner(pl.LightningModule):
@@ -13,8 +13,6 @@ class BankLearner(pl.LightningModule):
         super().__init__()
 
         self.cfg = cfg
-
-        metrics = get_metric_collection()
 
         self.model = TabTransformer(
             num_class_per_category=num_class_per_category,
@@ -27,34 +25,42 @@ class BankLearner(pl.LightningModule):
             continuous_mean_std=torch.randn(cfg.DATA.NUM_CONT_FEATURES, 2)
         )
 
-        self.train_metrics = metrics.clone(prefix='train_')
-        self.val_metrics = metrics.clone(prefix='val_')
-
     def forward(self, inputs):
-        # forward: defines prediction/inference actions
         preds = self.model(inputs['x_cate'], inputs['x_cont'])
+
         return preds
 
     def training_step(self, batch, batch_idx):
-        # training_step = training loop, independent of forward
-        # batch: torch_geometric.data.batch.Batch
-        preds = self.model(batch['x_cate'], batch['x_cont'])
-        loss_func = torch.nn.BCELoss()
-        loss = loss_func(preds, batch['labels'])
+        loss, metrics = self._calculate_loss_and_metrics(batch, 'train')
+        self.log_dict(metrics)
 
-        train_metrics_log = self.train_metrics(preds, batch['labels'].type(torch.int32))
-        self.log_dict(train_metrics_log)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        preds = self.model(batch['x_cate'], batch['x_cont'])
-        loss_func = torch.nn.BCELoss()
-        loss = loss_func(preds, batch['labels'])
+        loss, metrics = self._calculate_loss_and_metrics(batch, 'val')
+        self.log_dict(metrics)
 
-        val_metrics_log = self.val_metrics(preds, batch['labels'].type(torch.int32))
-        self.log_dict(val_metrics_log)
         return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4, weight_decay=1e-3)
+
         return optimizer
+
+    def _calculate_loss_and_metrics(self, batch: Dict, prefix: str) -> Tuple[torch.Tensor, Dict]:
+        preds = self.model(batch['x_cate'], batch['x_cont'])
+        target = batch['labels']
+
+        loss_func = torch.nn.BCELoss()
+        loss = loss_func(preds, target)
+
+        metrics = {
+            f'{prefix}_loss': float(loss.detach().cpu().numpy()),
+            f'{prefix}_acc': accuracy(preds=preds, target=target.type(torch.int32)),
+            f'{prefix}_precision': precision(preds, target.type(torch.int32)),
+            f'{prefix}_recall': recall(preds, target.type(torch.int32)),
+            f'{prefix}_auc': auroc(preds, target.type(torch.int32))
+        }
+
+        return loss, metrics
+
