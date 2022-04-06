@@ -21,7 +21,7 @@ from utils.logging import make_logger
 logger = make_logger(name='tab-transformer trainer')
 
 cfg = get_cfg_defaults()
-cfg.merge_from_file(os.path.join(os.getcwd(), 'tab_transformer/configs/v5.yaml'))
+cfg.merge_from_file(os.path.join(os.getcwd(), 'tab_transformer/configs/v6.yaml'))
 cfg.freeze()
 
 logger.info(f'configuration: \n {cfg}')

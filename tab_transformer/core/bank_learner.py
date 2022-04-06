@@ -44,11 +44,7 @@ class BankLearner(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            params=self.model.parameters(),
-            lr=1e-4,
-            weight_decay=1e-3
-        )
+        optimizer = torch.optim.Adam(params=self.model.parameters(), lr=0)
 
         scheduler = CosineAnnealingWarmupRestarts(
             optimizer=optimizer,
