@@ -100,16 +100,17 @@ class BankPreprocessor(BaseMachine):
         # caution: originally, scale should be performed
         # after data split so that data leakage does not occur
         # formula: (x - median) / (Q3 - Q1)
-        scaler = RobustScaler()
-        scaled = scaler.fit_transform(data[cont_features])
 
-        scaler = MinMaxScaler()
-        scaled = scaler.fit_transform(scaled)
-
-        data = data.drop(cont_features, axis=1)
-        data = pd.concat([data, pd.DataFrame(scaled, columns=cont_features)], axis=1)
-
-        self.logger.info('scaled continuous features')
+        # scaler = RobustScaler()
+        # scaled = scaler.fit_transform(data[cont_features])
+        #
+        # scaler = MinMaxScaler()
+        # scaled = scaler.fit_transform(scaled)
+        #
+        # data = data.drop(cont_features, axis=1)
+        # data = pd.concat([data, pd.DataFrame(scaled, columns=cont_features)], axis=1)
+        #
+        # self.logger.info('scaled continuous features')
 
         # 3. label mapping
         data['y'] = data['y'].map({'yes': 1, 'no': 0})
@@ -154,6 +155,6 @@ class BankPreprocessor(BaseMachine):
 
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)
 
         return train_loader, val_loader, test_loader, additional_info[0], additional_info[1]

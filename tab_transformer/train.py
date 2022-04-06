@@ -21,7 +21,7 @@ from utils.logging import make_logger
 logger = make_logger(name='tab-transformer trainer')
 
 cfg = get_cfg_defaults()
-cfg.merge_from_file(os.path.join(os.getcwd(), 'tab_transformer/configs/v1.yaml'))
+cfg.merge_from_file(os.path.join(os.getcwd(), 'tab_transformer/configs/v5.yaml'))
 cfg.freeze()
 
 logger.info(f'configuration: \n {cfg}')
@@ -61,8 +61,11 @@ trainer = pl.Trainer(
 trainer.fit(learner, train_loader, val_loader)
 
 
-# check
 inputs = next(iter(test_loader))
 preds = learner(inputs)
-
+print(preds[0:5])
 print(torch.where(preds >= 0.5)[0].shape, torch.where(preds < 0.5)[0].shape)
+
+# for k, v in list(dict(learner.named_parameters()).items()):
+#     print(k, v.detach().cpu().numpy().reshape(-1, 1)[0:5])
+

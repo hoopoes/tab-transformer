@@ -5,6 +5,7 @@ import torch
 from torchmetrics.functional import accuracy, precision, recall, auroc
 import pytorch_lightning as pl
 
+from models.scheduler import CosineAnnealingWarmupRestarts
 from models.tab_transformer import TabTransformer
 
 
@@ -43,9 +44,26 @@ class BankLearner(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4, weight_decay=1e-3)
+        optimizer = torch.optim.Adam(
+            params=self.model.parameters(),
+            lr=1e-4,
+            weight_decay=1e-3
+        )
 
-        return optimizer
+        scheduler = CosineAnnealingWarmupRestarts(
+            optimizer=optimizer,
+            first_cycle_steps=self.cfg.TRAIN.FIRST_CYCLE_STEPS,
+            cycle_mult=self.cfg.TRAIN.CYCLE,
+            max_lr=self.cfg.TRAIN.MAX_LR,
+            min_lr=self.cfg.TRAIN.MIN_LR,
+            warmup_steps=self.cfg.TRAIN.WARMUP_STEPS,
+            gamma=self.cfg.TRAIN.GAMMA
+        )
+
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': {'scheduler': scheduler, 'monitor': 'train_loss'}
+        }
 
     def _calculate_loss_and_metrics(self, batch: Dict, prefix: str) -> Tuple[torch.Tensor, Dict]:
         preds = self.model(batch['x_cate'], batch['x_cont'])
