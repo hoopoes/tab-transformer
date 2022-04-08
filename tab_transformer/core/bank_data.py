@@ -84,7 +84,10 @@ class BankPreprocessor(BaseMachine):
         # 1. categorical features mapping
         for f in cate_features:
             if f == 'month':
-                month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+                month_list = [
+                    'jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                    'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
+                ]
                 map_dict = {m: i for i, m in enumerate(month_list)}
                 data[f] = data[f].map(map_dict)
             else:
