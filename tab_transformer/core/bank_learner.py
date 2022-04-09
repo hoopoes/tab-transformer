@@ -10,8 +10,9 @@ from models.tab_transformer import TabTransformer
 
 
 class BankLearner(pl.LightningModule):
-    def __init__(self, cfg: CfgNode, num_class_per_category: Tuple[int]):
+    def __init__(self, cfg: CfgNode, num_class_per_category: Tuple):
         super().__init__()
+        self.save_hyperparameters()
 
         self.cfg = cfg
 
@@ -49,7 +50,7 @@ class BankLearner(pl.LightningModule):
         scheduler = CosineAnnealingWarmupRestarts(
             optimizer=optimizer,
             first_cycle_steps=self.cfg.TRAIN.FIRST_CYCLE_STEPS,
-            cycle_mult=self.cfg.TRAIN.CYCLE,
+            cycle_mult=self.cfg.TRAIN.CYCLE_MULT,
             max_lr=self.cfg.TRAIN.MAX_LR,
             min_lr=self.cfg.TRAIN.MIN_LR,
             warmup_steps=self.cfg.TRAIN.WARMUP_STEPS,

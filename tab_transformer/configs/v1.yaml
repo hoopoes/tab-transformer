@@ -5,13 +5,13 @@ MODEL:
   NUM_HEADS: 4
 
 TRAIN:
-  RUN_NAME: initial-lr-0-32/3/4
+  RUN_NAME: fcs(50)-c(2)-max(1e-3)-min(1e-5)-warm(10)-gamma(0.5)
   BATCH_SIZE: 128
-  EPOCHS: 5
-  PATIENCE: 2
+  EPOCHS: 10
+  PATIENCE: 3
   
   FIRST_CYCLE_STEPS: 50
-  CYCLE: 2.0
+  CYCLE_MULT: 2.0
   MAX_LR: 0.001
   MIN_LR: 0.00001
   WARMUP_STEPS: 10

@@ -1,0 +1,18 @@
+MODEL:
+  NAME: bank_tab
+  HIDDEN_SIZE: 32
+  NUM_LAYERS: 3
+  NUM_HEADS: 4
+
+TRAIN:
+  RUN_NAME: fcs(50)-c(1)-max(1e-3)-min(1e-5)-warm(10)-gamma(0.5)
+  BATCH_SIZE: 128
+  EPOCHS: 10
+  PATIENCE: 3
+  
+  FIRST_CYCLE_STEPS: 50
+  CYCLE_MULT: 1.0
+  MAX_LR: 0.001
+  MIN_LR: 0.00001
+  WARMUP_STEPS: 10
+  GAMMA: 0.5

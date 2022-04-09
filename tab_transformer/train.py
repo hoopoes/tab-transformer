@@ -25,7 +25,7 @@ from utils.logging import make_logger
 # args = parser.parse_args()
 # CONFIG_FILE = args.config
 
-CONFIG_FILE = 'v1'
+CONFIG_FILE = 'v3'
 
 logger = make_logger(name='tab-transformer trainer')
 
