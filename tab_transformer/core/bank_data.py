@@ -57,6 +57,7 @@ class BankPreprocessor(BaseMachine):
         self.cfg = cfg
         self.logger = logger
 
+    @property
     def info(self):
         msg = 'dataset url: https://archive.ics.uci.edu/ml/datasets/bank+marketing'
         return msg
@@ -75,9 +76,13 @@ class BankPreprocessor(BaseMachine):
 
         data = self.load_data()
 
-        cont_features = ['age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous']
-        cate_features = list(set(data.columns).difference(set(cont_features)))
-        cate_features.remove('y')
+        cont_features = [
+            'age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous'
+        ]
+        cate_features = [
+            'contact', 'default', 'education', 'housing', 'job',
+            'loan', 'marital', 'month', 'poutcome'
+        ]
 
         map_records = {}
 
@@ -154,10 +159,15 @@ class BankPreprocessor(BaseMachine):
 
         train_dataset = BankDataset(dataset['train'], additional_info[2], additional_info[3])
         val_dataset = BankDataset(dataset['val'], additional_info[2], additional_info[3])
-        test_dataset = BankDataset(dataset['test'], additional_info[2], additional_info[3])
 
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)
 
-        return train_loader, val_loader, test_loader, additional_info[0], additional_info[1]
+        # test data
+        test_data = {
+            'x_cate': torch.tensor(dataset['test'][additional_info[2]].values, dtype=torch.int32),
+            'x_cont': torch.tensor(dataset['test'][additional_info[3]].values, dtype=torch.float32),
+            'labels': torch.tensor(dataset['test']['y'].values, dtype=torch.int32)
+        }
+
+        return train_loader, val_loader, test_data, additional_info[0], additional_info[1]
