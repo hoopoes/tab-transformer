@@ -5,8 +5,8 @@ _C = CN()
 
 # directories
 _C.ADDRESS = CN()
-_C.ADDRESS.DATA = 'tab_transformer/data/'
-_C.ADDRESS.CHECK = 'tab_transformer/checkpoints/'
+_C.ADDRESS.DATA = 'data/'
+_C.ADDRESS.CHECK = 'checkpoints/'
 
 # data
 _C.DATA = CN()
