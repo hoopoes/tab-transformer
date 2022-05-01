@@ -25,7 +25,11 @@ def prepare_trainer(config_file: str, debug_mode: bool = False):
     train_loader, val_loader, test_data, map_records, num_class_per_category = machine.get_loader(
         train_ratio=0.65, val_ratio=0.15, batch_size=cfg.TRAIN.BATCH_SIZE)
 
-    learner = BankLearner(cfg=cfg, num_class_per_category=num_class_per_category)
+    learner = BankLearner(
+        cfg=cfg,
+        num_class_per_category=num_class_per_category,
+        train_loader=train_loader
+    )
 
     wandb_logger = WandbLogger(
         project='tab-transformer-experiment',

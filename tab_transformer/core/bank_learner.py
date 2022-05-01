@@ -2,6 +2,8 @@ from typing import Tuple, Dict
 from yacs.config import CfgNode
 
 import torch
+from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import OneCycleLR
 from torchmetrics.functional import accuracy, precision, recall, auroc
 import pytorch_lightning as pl
 
@@ -10,11 +12,12 @@ from models.tab_transformer import TabTransformer
 
 
 class BankLearner(pl.LightningModule):
-    def __init__(self, cfg: CfgNode, num_class_per_category: Tuple):
+    def __init__(self, cfg: CfgNode, num_class_per_category: Tuple, train_loader: DataLoader):
         super().__init__()
         self.save_hyperparameters()
 
         self.cfg = cfg
+        self.train_loader = train_loader
 
         self.model = TabTransformer(
             num_class_per_category=num_class_per_category,
@@ -47,15 +50,28 @@ class BankLearner(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(params=self.model.parameters(), lr=0)
 
-        scheduler = CosineAnnealingWarmupRestarts(
-            optimizer=optimizer,
-            first_cycle_steps=self.cfg.TRAIN.FIRST_CYCLE_STEPS,
-            cycle_mult=self.cfg.TRAIN.CYCLE_MULT,
-            max_lr=self.cfg.TRAIN.MAX_LR,
-            min_lr=self.cfg.TRAIN.MIN_LR,
-            warmup_steps=self.cfg.TRAIN.WARMUP_STEPS,
-            gamma=self.cfg.TRAIN.GAMMA
-        )
+        if self.cfg.TRAIN.SCHEDULER == 'cos':
+            scheduler = CosineAnnealingWarmupRestarts(
+                optimizer=optimizer,
+                first_cycle_steps=self.cfg.TRAIN.FIRST_CYCLE_STEPS,
+                cycle_mult=self.cfg.TRAIN.CYCLE_MULT,
+                max_lr=self.cfg.TRAIN.MAX_LR,
+                min_lr=self.cfg.TRAIN.MIN_LR,
+                warmup_steps=self.cfg.TRAIN.WARMUP_STEPS,
+                gamma=self.cfg.TRAIN.GAMMA
+            )
+
+        elif self.cfg.TRAIN.SCHEDULER == 'one_cycle':
+            scheduler = OneCycleLR(
+                optimizer=optimizer,
+                max_lr=self.cfg.TRAIN.MAX_LR,
+                epochs=self.cfg.TRAIN.EPOCHS,
+                steps_per_epoch=len(self.train_loader),
+                anneal_strategy='cos'
+            )
+
+        else:
+            raise ValueError('scheduler must be cos or one_cycle. check the config file settings')
 
         return {
             'optimizer': optimizer,
